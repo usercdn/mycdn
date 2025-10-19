@@ -1,6 +1,12 @@
 const urlParams = new URLSearchParams(window.location.search);
-
-window.MY_ID = urlParams.get("blogId") || "abc";
+const path = window.location.pathname.replace("/", "");
+let id = "abc";
+if(path == "PostList.naver"){
+    id = urlParams.get("blogId");
+} else {
+    id = path;
+}
+window.MY_ID = id;
 window.BOARD_URL = "/PostList.naver?categoryNo=0&listStyle=card&tab=1&trackingCode=blog_buddylist&blogId=";
 window.POST_URL = "";
 
