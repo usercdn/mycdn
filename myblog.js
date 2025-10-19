@@ -44,14 +44,14 @@ function injectAppStyles() {
 		const htmlContent = `
 		<div id="appContainer" class="bg-white rounded-xl shadow-2xl border border-gray-100 flex flex-col h-full overflow-hidden">
         <header class="p-6 pb-0">
-            <h1 class="text-3xl font-extrabold text-gray-800 mb-2">게시판 담당자 자동 관리 도구</h1>
+            <h1 class="text-3xl font-extrabold text-gray-800 mb-2">블로그 자동 관리 도구</h1>
             <p class="text-gray-500 mb-4 text-sm">
-                팝업을 띄운 <strong class="text-red-500">메인 창</strong>에서 담당자별 게시물 확인을 자동화합니다.
+                팝업을 띄운 <strong class="text-red-500">메인 창</strong>에서 블로그 확인을 자동화합니다.
             </p>
             
             <!-- 게시판 타입 선택 UI (최상단 배치) -->
             <div class="mb-5 p-3 bg-indigo-50 rounded-lg border border-indigo-200">
-                <label class="block text-sm font-bold text-indigo-700 mb-2">① 처리할 게시판 타입 선택 (T + 그룹 ID)</label>
+                <label class="block text-sm font-bold text-indigo-700 mb-2">① 블로그확인 (T + 그룹 ID)</label>
                 <div id="boardTypeRadios" class="type-list">
                     <div v-for="type in dynamicBoardTypes" :key="type" class="flex items-center">
                         <input :id="'type' + type" name="boardType" type="radio" :value="type" 
@@ -71,14 +71,14 @@ function injectAppStyles() {
                     :class="{'active': currentTab === 'manage'}" 
                     class="tab-button py-2 px-4 text-gray-500 hover:text-indigo-600 focus:outline-none"
                 >
-                    ② 담당자 목록 관리
+                    ② 이웃 목록 관리
                 </button>
                 <button 
                     @click="currentTab = 'auto'" 
                     :class="{'active': currentTab === 'auto'}" 
                     class="tab-button py-2 px-4 text-gray-500 hover:text-indigo-600 focus:outline-none"
                 >
-                    ③ 자동화 실행 및 옵션 설정
+                    ③ 자동화 실행
                 </button>
             </nav>
         </header>
@@ -88,7 +88,7 @@ function injectAppStyles() {
             <div v-if="currentTab === 'manage'">
                 <div class="mb-6 text-input-group">
                     <label for="managerInput" class="block text-sm font-medium text-gray-700 mb-2">
-                        타입 <strong class="text-indigo-600">{{ currentBoardType }}</strong>의 담당자 목록 (<strong class="text-indigo-600">blogId 닉네임</strong> 형식으로 입력)
+                        타입 <strong class="text-indigo-600">{{ currentBoardType }}</strong>의 이웃 목록 (<strong class="text-indigo-600">blogId 닉네임</strong> 형식으로 입력)
                     </label>
                     <textarea id="managerInput" rows="10" 
                         v-model="currentManagersText"
@@ -103,10 +103,10 @@ function injectAppStyles() {
                         <span v-if="api.isLoading">API 로딩 중 ({{ api.currentPage }})...</span>
                         <span v-else>서버에서 불러오기 (API)</span>
                     </button>
-                    <button @click="loadFromLocalStorage" class="flex-1 min-w-[140px] px-4 py-2 text-white bg-blue-600 hover:bg-blue-700 font-semibold rounded-lg shadow-md transition duration-200">
+                    <button v-if="false" @click="loadFromLocalStorage" class="flex-1 min-w-[140px] px-4 py-2 text-white bg-blue-600 hover:bg-blue-700 font-semibold rounded-lg shadow-md transition duration-200">
                         로컬 저장소에서 불러오기
                     </button>
-                    <button @click="saveToLocalStorage" class="flex-1 min-w-[140px] px-4 py-2 text-white bg-red-600 hover:bg-red-700 font-semibold rounded-lg shadow-md transition duration-200">
+                    <button v-if="false" @click="saveToLocalStorage" class="flex-1 min-w-[140px] px-4 py-2 text-white bg-red-600 hover:bg-red-700 font-semibold rounded-lg shadow-md transition duration-200">
                         로컬 저장소에 저장
                     </button>
                 </div>
@@ -139,7 +139,7 @@ function injectAppStyles() {
                 </div>
 
                 <!-- 옵션 설정 UI -->
-                <div class="mb-6 p-4 border border-indigo-200 rounded-lg bg-indigo-50">
+                <div class="mb-6 p-4 border border-indigo-200 rounded-lg bg-indigo-50" v-if="false">
                     <label class="block text-sm font-bold text-indigo-700 mb-3">
                         자동화 옵션 설정
                     </label>
@@ -264,13 +264,16 @@ function injectAppStyles() {
         }
         
         // 메인 창의 document를 기준으로 버튼을 찾습니다.
-        const likeButtons = Array.from(
+        let likeButtons = Array.from(
             targetWindow.document.querySelectorAll('#contentslist_block a.u_likeit_button:not(.on)')
         );
+        const elementsToKeep = 5;
 
         if (likeButtons.length === 0) {
-            logFunction('클릭할 좋아요 버튼 (u_likeit_button:not(.on))을 찾지 못했습니다.', 'info');
+            logFunction('클릭할 좋아요 버튼을 찾지 못했습니다.', 'info');
             return 0;
+        } else if (likeButtons.length > elementsToKeep){
+            likeButtons.splice(elementsToKeep);
         }
 
         logFunction(`총 ${likeButtons.length}개의 좋아요 버튼 클릭을 시작합니다.`, 'info');
@@ -324,7 +327,7 @@ function injectAppStyles() {
             seqDispatch(btn, 'click', base);
             
             clickedCount++;
-            let t = getRandomInt(1000, 3000);
+            let t = getRandomInt(1000, 5000);
             await new Promise(resolve => setTimeout(resolve, t)); // 1~3초 대기
         }
 
@@ -570,7 +573,8 @@ function injectAppStyles() {
                             });
 
                             this.api.currentPage++;
-                            await new Promise(r => setTimeout(r, 500)); 
+                            let t = getRandomInt(500, 900);
+                            await new Promise(r => setTimeout(r, t)); 
                         }
 
                         this.log(`### 서버에서 총 ${totalLoadedCount}명의 담당자 목록을 ${this.api.currentPage - 1} 페이지에 걸쳐 성공적으로 불러왔습니다. ###`, 'success');
@@ -655,6 +659,11 @@ function injectAppStyles() {
                         }
 
                         this.automation.currentManager = manager;
+                            
+                        // 페이지 로딩 대기
+                        let loadt = getRandomInt(2000, 7000);
+                        await new Promise(r => setTimeout(r, loadt));
+
                         // 게시판 URL을 사용하여 담당자 게시판으로 이동 및 클릭 시뮬레이션 실행
                         await this.processManagerBoard(currentType, manager); 
 
@@ -676,14 +685,15 @@ function injectAppStyles() {
 					if(this.runFlg == false){
 						return;
 					}
-                    this.log(`[${manager.id}] 담당자 게시판 이동 중... (URL: ${this.BOARD_URL} + ${manager.id})`);
+                    this.log(`[${manager.nickname} (${manager.id})] 이동 중...`);
                     
                     // [변경 요청 반영] BOARD_URL + manager.id 로 이동
                     const finalUrl = this.BOARD_URL + manager.id; 
                     this.targetWindow.location.href = finalUrl;
 
                     // 페이지 로딩 대기
-                    await new Promise(r => setTimeout(r, 2000)); 
+                    let loadt = getRandomInt(2000, 3000);
+                    await new Promise(r => setTimeout(r, loadt)); 
 
                     // fnBtnclick 실행 로직
                     this.log(`[${manager.id}] 게시판 로딩 완료. 좋아요 버튼 클릭 로직 시작.`, 'info');
@@ -692,7 +702,8 @@ function injectAppStyles() {
                     await fnBtnclick(this.targetWindow, this.log.bind(this), this.automation);
                     
                     // fnBtnclick이 완료되면 다음 담당자로 넘어갑니다.
-                    await new Promise(r => setTimeout(r, 1000)); // 다음 담당자 처리 전 잠깐 대기
+                    let t = getRandomInt(3000, 13000);
+                    await new Promise(r => setTimeout(r, t)); // 다음 담당자 처리 전 잠깐 대기
                 },
 
                 // 이전 processSinglePost 함수는 제거되었습니다.
