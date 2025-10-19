@@ -6,6 +6,7 @@ if(path == "PostList.naver"){
 } else {
     id = path;
 }
+window.version = "1.0.1";
 window.MY_ID = id;
 window.BOARD_URL = "/PostList.naver?categoryNo=0&listStyle=card&tab=1&trackingCode=blog_buddylist&blogId=";
 window.POST_URL = "";
@@ -44,7 +45,7 @@ function injectAppStyles() {
 		const htmlContent = `
 		<div id="appContainer" class="bg-white rounded-xl shadow-2xl border border-gray-100 flex flex-col h-full overflow-hidden">
         <header class="p-6 pb-0">
-            <h1 class="text-3xl font-extrabold text-gray-800 mb-2">블로그 자동 관리 도구</h1>
+            <h1 class="text-3xl font-extrabold text-gray-800 mb-2">블로그 자동 관리 도구(v.{{version}})</h1>
             <p class="text-gray-500 mb-4 text-sm">
                 팝업을 띄운 <strong class="text-red-500">메인 창</strong>에서 블로그 확인을 자동화합니다.
             </p>
@@ -165,7 +166,7 @@ function injectAppStyles() {
                     class="w-full mt-3 px-4 py-3 text-lg text-white bg-indigo-700 hover:bg-indigo-800 font-bold rounded-lg shadow-xl transition duration-200 transform hover:scale-[1.01] disabled:bg-indigo-400 disabled:cursor-not-allowed"
                 >
                     <span v-if="!automation.isProcessing">
-                        ▶ 타입 {{ currentBoardType }} 자동 확인 시작 (총 {{ managerCount[currentBoardType] || 0 }}명)
+                        ▶ 타입 {{ currentBoardType }} 자동확인 시작 (총 {{ managerCount[currentBoardType] || 0 }}명)
                     </span>
                     <span v-else>처리 중... (중지하려면 클릭해주세요)</span>
                 </button>
@@ -347,6 +348,7 @@ function injectAppStyles() {
             data: {
                 // [API] 내 아이디 (하드코딩)
                 MY_ID: window.MY_ID, 
+                version: window.version,
                 LOCAL_STORAGE_KEY: 'BoardManagersData',
 				runFlg : false,
                 
