@@ -7,6 +7,7 @@ if(path == "PostList.naver"){
     id = path;
 }
 window.version = "1.0.1";
+
 window.MY_ID = id;
 window.BOARD_URL = "/PostList.naver?categoryNo=0&listStyle=card&tab=1&trackingCode=blog_buddylist&blogId=";
 window.POST_URL = "";
