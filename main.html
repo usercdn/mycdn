@@ -1,27 +1,15 @@
-const urlParams = new URLSearchParams(window.location.search);
-const path = window.location.pathname.replace("/", "");
-let id = "abc";
-if(path == "PostList.naver"){
-    id = urlParams.get("blogId");
-} else {
-    id = path;
-}
-window.version = "1.0.1";
-
-window.elementsToKeep = 5;
-window.MY_ID = id;
-window.BOARD_URL = "/PostList.naver?categoryNo=0&listStyle=card&tab=1&trackingCode=blog_buddylist&blogId=";
-window.POST_URL = "";
-
-
-function injectAppStyles() {
-  const STYLE_ID = 'app-inline-style';
-
-  // 이미 추가돼 있으면 중복 삽입 방지
-  if (document.getElementById(STYLE_ID)) return;
-
-  const css = `
-    body { font-family: 'Inter', sans-serif; background-color: #f7f9fb; }
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>게시판 담당자 자동 관리 도구</title>
+    <!-- Tailwind CSS 로드 -->
+    <script src="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.js"></script>
+    <!-- Vue.js 2.x 로드 -->
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.7.14/dist/vue.js"></script>
+    <style>
+         body { font-family: 'Inter', sans-serif; background-color: #f7f9fb; }
     #appContainer { max-width: 700px; height: 100vh; }
     /* 로그 영역에 스크롤 적용 */
     .log-area { max-height: 200px; overflow-y: auto; display: flex; flex-direction: column-reverse; }
@@ -32,20 +20,12 @@ function injectAppStyles() {
     .tab-button { transition: all 0.2s; border-bottom: 3px solid transparent; }
     .tab-button.active { border-color: #4f46e5; color: #1e3a8a; font-weight: 600; }
     .text-input-group { display: flex; flex-direction: column; flex-grow: 1; }
-  `;
+    </style>
+</head>
+<body>
 
-  const style = document.createElement('style');
-  style.id = STYLE_ID;
-  style.type = 'text/css';
-  style.appendChild(document.createTextNode(css));
-
-  document.head.appendChild(style);
-
-	const app = document.getElementById('app');
-	
-	if (app) {
-		const htmlContent = `
-		<div id="appContainer" class="bg-white rounded-xl shadow-2xl border border-gray-100 flex flex-col h-full overflow-hidden">
+<div id="app" class="p-4 md:p-8 mx-auto flex flex-col">
+    <div id="appContainer" class="bg-white rounded-xl shadow-2xl border border-gray-100 flex flex-col h-full overflow-hidden">
         <header class="p-6 pb-0">
             <h1 class="text-3xl font-extrabold text-gray-800 mb-2">블로그 자동 관리 도구(v.{{version}})</h1>
             <p class="text-gray-500 mb-4 text-sm">
@@ -188,14 +168,24 @@ function injectAppStyles() {
             </div>
         </main>
     </div>
-		`;
-		app.innerHTML = htmlContent;
-	}
-};
+</div>
+    
+<script>
+    const urlParams = new URLSearchParams(window.location.search);
+const path = window.location.pathname.replace("/", "");
+let id = "abc";
+if(path == "PostList.naver"){
+    id = urlParams.get("blogId");
+} else {
+    id = path;
+}
+window.version = "1.0.1";
 
-
-
-    // -----------------------------------------------------
+window.elementsToKeep = 5;
+window.MY_ID = id;
+window.BOARD_URL = "/PostList.naver?categoryNo=0&listStyle=card&tab=1&trackingCode=blog_buddylist&blogId=";
+window.POST_URL = "";
+// -----------------------------------------------------
     // 1. 유틸리티 함수 (제공해주신 소스 기반으로 재정의)
     // -----------------------------------------------------
 
@@ -728,4 +718,7 @@ function injectAppStyles() {
                 this.updateTextareaDisplay();
             }
         });
-    };
+    };      
+</script>
+</body>
+</html>
