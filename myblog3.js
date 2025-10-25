@@ -1,181 +1,190 @@
-<!DOCTYPE html>
-<html lang="ko">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>블로그 자동 관리 도구</title>
-    <script src="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/vue@2.7.14/dist/vue.js"></script>
-    <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f7f9fb; }
-        /* 가로 폭 제한 해제 (max-width: 700px 제거) */
-        #appContainer { max-width: none; height: 100vh; } 
-        /* 로그 영역에 스크롤 적용 */
-        .log-area { max-height: 200px; overflow-y: auto; display: flex; flex-direction: column-reverse; }
-        .log-area div { padding: 4px 8px; margin-bottom: 4px; border-radius: 4px; font-size: 0.8rem; word-break: break-all; }
-        .log-success { background-color: #d1fae5; color: #065f46; }
-        .log-error { background-color: #fee2e2; color: #991b1b; }
-        .log-info { background-color: #e0f2fe; color: #075985; }
-        .tab-button { transition: all 0.2s; border-bottom: 3px solid transparent; }
-        .tab-button.active { border-color: #4f46e5; color: #1e3a8a; font-weight: 600; }
-        .text-input-group { display: flex; flex-direction: column; flex-grow: 1; }
-        /* 진행 중 비활성화 시 커서 변경 */
-        input:disabled + label { cursor: not-allowed; color: #9ca3af; }
-    </style>
-</head>
-<body>
+function injectAppStyles() {
+  const STYLE_ID = 'app-inline-style';
 
-<div id="app" class="p-4 md:p-8 mx-auto flex flex-col w-full"> 
-    <div id="appContainer" class="bg-white rounded-xl shadow-2xl border border-gray-100 flex flex-col h-full overflow-hidden">
-        <header class="p-6 pb-0">
-            <h1 class="text-3xl font-extrabold text-gray-800 mb-2">블로그 자동 관리 도구(v.{{version}})</h1>
-            <p class="text-gray-500 mb-4 text-sm">
-                팝업을 띄운 <strong class="text-red-500">메인 창</strong>에서 블로그 확인을 자동화합니다.
-            </p>
-            
-            <div class="mb-5 p-3 bg-indigo-50 rounded-lg border border-indigo-200">
-                <label class="block text-sm font-bold text-indigo-700 mb-2">① 블로그확인 (T + 그룹 명칭)</label>
-                <div id="boardTypeRadios" class="type-list grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-2">
-                    <div v-for="type in dynamicBoardTypes" :key="type" class="flex items-center">
-                        <input :id="'type' + type" name="boardType" type="radio" :value="type" 
-                                v-model="currentBoardType"
-                                :disabled="automation.isProcessing"
-                                class="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500">
-                        <label :for="'type' + type" class="ml-2 block text-sm font-medium text-gray-700 cursor-pointer"
-                               :class="{'text-gray-400 cursor-not-allowed': automation.isProcessing}">
-                            <span class="font-bold text-indigo-600" :class="{'text-gray-400': automation.isProcessing}">{{ getGroupName(type) }}</span> ({{ managerCount[type] || 0 }}명)
+  // 이미 추가돼 있으면 중복 삽입 방지
+  if (document.getElementById(STYLE_ID)) return;
+
+  const css = `
+    body { font-family: 'Inter', sans-serif; background-color: #f7f9fb; }
+    /* 가로 폭 제한 해제 (max-width: 700px 제거) */
+    #appContainer { max-width: none; height: 100vh; } 
+    /* 로그 영역에 스크롤 적용 */
+    .log-area { max-height: 200px; overflow-y: auto; display: flex; flex-direction: column-reverse; }
+    .log-area div { padding: 4px 8px; margin-bottom: 4px; border-radius: 4px; font-size: 0.8rem; word-break: break-all; }
+    .log-success { background-color: #d1fae5; color: #065f46; }
+    .log-error { background-color: #fee2e2; color: #991b1b; }
+    .log-info { background-color: #e0f2fe; color: #075985; }
+    .tab-button { transition: all 0.2s; border-bottom: 3px solid transparent; }
+    .tab-button.active { border-color: #4f46e5; color: #1e3a8a; font-weight: 600; }
+    .text-input-group { display: flex; flex-direction: column; flex-grow: 1; }
+    /* 진행 중 비활성화 시 커서 변경 */
+    input:disabled + label { cursor: not-allowed; color: #9ca3af; }
+  `;
+
+  const style = document.createElement('style');
+  style.id = STYLE_ID;
+  style.type = 'text/css';
+  style.appendChild(document.createTextNode(css));
+
+  document.head.appendChild(style);
+
+	const app = document.getElementById('app');
+	
+	if (app) {
+		const htmlContent = `
+		<div id="appContainer" class="bg-white rounded-xl shadow-2xl border border-gray-100 flex flex-col h-full overflow-hidden">
+            <header class="p-6 pb-0">
+                <h1 class="text-3xl font-extrabold text-gray-800 mb-2">블로그 자동 관리 도구(v.{{version}})</h1>
+                <p class="text-gray-500 mb-4 text-sm">
+                    팝업을 띄운 <strong class="text-red-500">메인 창</strong>에서 블로그 확인을 자동화합니다.
+                </p>
+                
+                <div class="mb-5 p-3 bg-indigo-50 rounded-lg border border-indigo-200">
+                    <label class="block text-sm font-bold text-indigo-700 mb-2">① 블로그확인 (T + 그룹 명칭)</label>
+                    <div id="boardTypeRadios" class="type-list grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-2">
+                        <div v-for="type in dynamicBoardTypes" :key="type" class="flex items-center">
+                            <input :id="'type' + type" name="boardType" type="radio" :value="type" 
+                                    v-model="currentBoardType"
+                                    :disabled="automation.isProcessing"
+                                    class="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500">
+                            <label :for="'type' + type" class="ml-2 block text-sm font-medium text-gray-700 cursor-pointer"
+                                :class="{'text-gray-400 cursor-not-allowed': automation.isProcessing}">
+                                <span class="font-bold text-indigo-600" :class="{'text-gray-400': automation.isProcessing}">{{ getGroupName(type) }}</span> ({{ managerCount[type] || 0 }}명)
+                            </label>
+                        </div>
+                    </div>
+                    <p v-if="automation.isProcessing" class="text-xs text-red-500 mt-2">
+                        자동화 진행 중에는 그룹을 변경할 수 없습니다.
+                    </p>
+                </div>
+
+                <nav class="flex border-b border-gray-200">
+                    <button 
+                        @click="currentTab = 'manage'" 
+                        :class="{'active': currentTab === 'manage'}" 
+                        class="tab-button py-2 px-4 text-gray-500 hover:text-indigo-600 focus:outline-none"
+                    >
+                        ② 이웃 목록 관리
+                    </button>
+                    <button 
+                        @click="currentTab = 'auto'" 
+                        :class="{'active': currentTab === 'auto'}" 
+                        class="tab-button py-2 px-4 text-gray-500 hover:text-indigo-600 focus:outline-none"
+                    >
+                        ③ 자동화 실행
+                    </button>
+                </nav>
+            </header>
+
+            <main class="flex-grow overflow-auto p-6 pt-4">
+                <div v-if="currentTab === 'manage'">
+                    <div class="mb-6 text-input-group">
+                        <label for="managerInput" class="block text-sm font-medium text-gray-700 mb-2">
+                            그룹 <strong class="text-indigo-600">{{ getGroupName(currentBoardType) }}</strong>의 이웃 목록 (<strong class="text-indigo-600">blogId 닉네임</strong> 형식으로 입력)
                         </label>
+                        <textarea id="managerInput" rows="6" 
+                            v-model="currentManagersText"
+                            @input="saveTextareaContent"
+                            class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150 flex-grow"
+                            placeholder="예시 (직접 입력 시):&#10;blogId1 닉네임A&#10;blogId2 닉네임B"
+                            :disabled="api.isLoading"
+                        ></textarea>
+                    </div>
+
+                    <div id="controls" class="flex flex-wrap gap-3 mb-6">
+                        <button @click="loadFromAPI" :disabled="api.isLoading" class="flex-1 min-w-[140px] px-4 py-2 text-white bg-green-600 hover:bg-green-700 font-semibold rounded-lg shadow-md transition duration-200 disabled:bg-green-400 disabled:cursor-wait">
+                            <span v-if="api.isLoading">API 로딩 중 ({{ api.currentPage }})...</span>
+                            <span v-else>서버 조회</span>
+                        </button>
+                        <button @click="loadFromLocalStorage" :disabled="api.isLoading" class="flex-1 min-w-[140px] px-4 py-2 text-white bg-blue-600 hover:bg-blue-700 font-semibold rounded-lg shadow-md transition duration-200 disabled:bg-blue-400 disabled:cursor-not-allowed">
+                            로컬 불러오기
+                        </button>
+                        <button @click="saveToLocalStorage" :disabled="api.isLoading" class="flex-1 min-w-[140px] px-4 py-2 text-white bg-red-600 hover:bg-red-700 font-semibold rounded-lg shadow-md transition duration-200 disabled:bg-red-400 disabled:cursor-not-allowed">
+                            로컬 저장
+                        </button>
                     </div>
                 </div>
-                <p v-if="automation.isProcessing" class="text-xs text-red-500 mt-2">
-                    자동화 진행 중에는 그룹을 변경할 수 없습니다.
-                </p>
-            </div>
 
-            <nav class="flex border-b border-gray-200">
-                <button 
-                    @click="currentTab = 'manage'" 
-                    :class="{'active': currentTab === 'manage'}" 
-                    class="tab-button py-2 px-4 text-gray-500 hover:text-indigo-600 focus:outline-none"
-                >
-                    ② 이웃 목록 관리
-                </button>
-                <button 
-                    @click="currentTab = 'auto'" 
-                    :class="{'active': currentTab === 'auto'}" 
-                    class="tab-button py-2 px-4 text-gray-500 hover:text-indigo-600 focus:outline-none"
-                >
-                    ③ 자동화 실행
-                </button>
-            </nav>
-        </header>
-
-        <main class="flex-grow overflow-auto p-6 pt-4">
-            <div v-if="currentTab === 'manage'">
-                <div class="mb-6 text-input-group">
-                    <label for="managerInput" class="block text-sm font-medium text-gray-700 mb-2">
-                        그룹 <strong class="text-indigo-600">{{ getGroupName(currentBoardType) }}</strong>의 이웃 목록 (<strong class="text-indigo-600">blogId 닉네임</strong> 형식으로 입력)
-                    </label>
-                    <textarea id="managerInput" rows="6" 
-                        v-model="currentManagersText"
-                        @input="saveTextareaContent"
-                        class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150 flex-grow"
-                        placeholder="예시 (직접 입력 시):&#10;blogId1 닉네임A&#10;blogId2 닉네임B"
-                        :disabled="api.isLoading"
-                    ></textarea>
-                </div>
-
-                <div id="controls" class="flex flex-wrap gap-3 mb-6">
-                    <button @click="loadFromAPI" :disabled="api.isLoading" class="flex-1 min-w-[140px] px-4 py-2 text-white bg-green-600 hover:bg-green-700 font-semibold rounded-lg shadow-md transition duration-200 disabled:bg-green-400 disabled:cursor-wait">
-                        <span v-if="api.isLoading">API 로딩 중 ({{ api.currentPage }})...</span>
-                        <span v-else>서버 조회</span>
-                    </button>
-                    <button @click="loadFromLocalStorage" :disabled="api.isLoading" class="flex-1 min-w-[140px] px-4 py-2 text-white bg-blue-600 hover:bg-blue-700 font-semibold rounded-lg shadow-md transition duration-200 disabled:bg-blue-400 disabled:cursor-not-allowed">
-                        로컬 불러오기
-                    </button>
-                    <button @click="saveToLocalStorage" :disabled="api.isLoading" class="flex-1 min-w-[140px] px-4 py-2 text-white bg-red-600 hover:bg-red-700 font-semibold rounded-lg shadow-md transition duration-200 disabled:bg-red-400 disabled:cursor-not-allowed">
-                        로컬 저장
-                    </button>
-                </div>
-            </div>
-
-            <div v-else-if="currentTab === 'auto'">
-                
-                <div v-if="automation.isProcessing" class="mb-6 p-4 border border-yellow-500 rounded-lg bg-yellow-50 shadow-md">
-                    <h3 class="text-lg font-bold text-yellow-800 mb-2">
-                        자동화 진행 중... <span class="font-normal text-sm text-yellow-700">(진행: {{ formatElapsedTime }})</span>
-                    </h3>
+                <div v-else-if="currentTab === 'auto'">
                     
-                    <p class="text-gray-700 font-semibold mb-1">
-                        총 이웃 처리: {{ automation.processedManagers }} / {{ automation.totalManagers }} 명
-                    </p>
-                    
-                    <div v-if="automation.totalManagers > 0">
-                        <p class="text-gray-600 text-sm">
-                            **그룹 {{ getGroupName(currentBoardType) }}** - {{ automation.currentManager.id }}({{ automation.currentManager.nickname }}) 처리 중
+                    <div v-if="automation.isProcessing" class="mb-6 p-4 border border-yellow-500 rounded-lg bg-yellow-50 shadow-md">
+                        <h3 class="text-lg font-bold text-yellow-800 mb-2">
+                            자동화 진행 중... <span class="font-normal text-sm text-yellow-700">(진행: {{ formatElapsedTime }})</span>
+                        </h3>
+                        
+                        <p class="text-gray-700 font-semibold mb-1">
+                            총 이웃 처리: {{ automation.processedManagers }} / {{ automation.totalManagers }} 명
+                        </p>
+                        
+                        <div v-if="automation.totalManagers > 0">
+                            <p class="text-gray-600 text-sm">
+                                **그룹 {{ getGroupName(currentBoardType) }}** - {{ automation.currentManager.id }}({{ automation.currentManager.nickname }}) 처리 중
+                            </p>
+                        </div>
+
+                        <div class="w-full bg-gray-200 rounded-full h-2.5 mt-2">
+                            <div class="bg-indigo-600 h-2.5 rounded-full transition-all duration-300" :style="{ width: automationProgress + '%' }"></div>
+                        </div>
+                        <p class="text-xs text-indigo-700 mt-1 font-medium">{{ automationProgress.toFixed(1) }}% 완료</p>
+
+                    </div>
+
+                    <div class="mb-6 p-4 border border-indigo-200 rounded-lg bg-indigo-50" v-if="false">
+                        <label class="block text-sm font-bold text-indigo-700 mb-3">
+                            자동화 옵션 설정
+                        </label>
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between p-2 bg-white rounded-md shadow-sm border border-gray-200">
+                                <label for="option1" class="flex-1 text-sm font-medium text-gray-700">옵션 1: 기본 멘트 추가 작업</label>
+                                <input id="option1" type="checkbox" v-model="globalAutomationOptions.option1" class="h-5 w-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+                            </div>
+                            <div class="flex items-center justify-between p-2 bg-white rounded-md shadow-sm border border-gray-200">
+                                <label for="option2" class="flex-1 text-sm font-medium text-gray-700">옵션 2: 확장 멘트 추가 작업</label>
+                                <input id="option2" type="checkbox" v-model="globalAutomationOptions.option2" class="h-5 w-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-3 p-1">
+                            **공통 블로그 URL:** {{ BOARD_URL }}<br>
+                            **공통 게시물 URL:** {{ POST_URL }}
                         </p>
                     </div>
-
-                    <div class="w-full bg-gray-200 rounded-full h-2.5 mt-2">
-                        <div class="bg-indigo-600 h-2.5 rounded-full transition-all duration-300" :style="{ width: automationProgress + '%' }"></div>
-                    </div>
-                    <p class="text-xs text-indigo-700 mt-1 font-medium">{{ automationProgress.toFixed(1) }}% 완료</p>
-
-                </div>
-
-                <div class="mb-6 p-4 border border-indigo-200 rounded-lg bg-indigo-50" v-if="false">
-                    <label class="block text-sm font-bold text-indigo-700 mb-3">
-                        자동화 옵션 설정
-                    </label>
-                    <div class="space-y-3">
-                        <div class="flex items-center justify-between p-2 bg-white rounded-md shadow-sm border border-gray-200">
-                            <label for="option1" class="flex-1 text-sm font-medium text-gray-700">옵션 1: 기본 멘트 추가 작업</label>
-                            <input id="option1" type="checkbox" v-model="globalAutomationOptions.option1" class="h-5 w-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
-                        </div>
-                        <div class="flex items-center justify-between p-2 bg-white rounded-md shadow-sm border border-gray-200">
-                            <label for="option2" class="flex-1 text-sm font-medium text-gray-700">옵션 2: 확장 멘트 추가 작업</label>
-                            <input id="option2" type="checkbox" v-model="globalAutomationOptions.option2" class="h-5 w-5 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500">
-                        </div>
-                    </div>
-                    <p class="text-xs text-gray-500 mt-3 p-1">
-                        **공통 블로그 URL:** {{ BOARD_URL }}<br>
-                        **공통 게시물 URL:** {{ POST_URL }}
+                
+                    <button 
+                        @click="startBoardAutomation" 
+                        :disabled="managerCount[currentBoardType] === 0 && !automation.isProcessing"
+                        class="w-full mt-3 px-4 py-3 text-lg text-white font-bold rounded-lg shadow-xl transition duration-200 transform hover:scale-[1.01] 
+                        " :class="{'bg-red-700 hover:bg-red-800': automation.isProcessing, 'bg-indigo-700 hover:bg-indigo-800': !automation.isProcessing}"
+                    >
+                        <span v-if="!automation.isProcessing">
+                            {{ automation.processedManagers > 0 ? '▶ 다시시작' : '▶ 시작' }} 
+                            (총 {{ managerCount[currentBoardType] || 0 }}명)
+                        </span>
+                        <span v-else>
+                            처리 중... (중지하려면 클릭해주세요)
+                        </span>
+                    </button>
+                    <p v-if="managerCount[currentBoardType] === 0 && !automation.isProcessing" class="text-sm text-red-500 mt-2 text-center">
+                        선택된 {{ getGroupName(currentBoardType) }}에 이웃이 없습니다. 조회버튼을 이용해 다시 조회하세요.
                     </p>
                 </div>
-            
-                <button 
-                    @click="startBoardAutomation" 
-                    :disabled="managerCount[currentBoardType] === 0 && !automation.isProcessing"
-                    class="w-full mt-3 px-4 py-3 text-lg text-white font-bold rounded-lg shadow-xl transition duration-200 transform hover:scale-[1.01] 
-                    " :class="{'bg-red-700 hover:bg-red-800': automation.isProcessing, 'bg-indigo-700 hover:bg-indigo-800': !automation.isProcessing}"
-                >
-                    <span v-if="!automation.isProcessing">
-                        {{ automation.processedManagers > 0 ? '▶ 다시시작' : '▶ 시작' }} 
-                        (총 {{ managerCount[currentBoardType] || 0 }}명)
-                    </span>
-                    <span v-else>
-                        처리 중... (중지하려면 클릭해주세요)
-                    </span>
-                </button>
-                <p v-if="managerCount[currentBoardType] === 0 && !automation.isProcessing" class="text-sm text-red-500 mt-2 text-center">
-                    선택된 {{ getGroupName(currentBoardType) }}에 이웃이 없습니다. 조회버튼을 이용해 다시 조회하세요.
-                </p>
-            </div>
-            
-            <div class="mt-8 border-t pt-4">
-                <h2 class="text-xl font-bold text-gray-800 mb-3">작업 로그</h2>
-                <div id="logArea" class="log-area bg-gray-50 p-3 rounded-lg min-h-[100px] shadow-inner">
-                    <div v-for="(log, index) in logMessages" :key="index" :class="log.class" class="rounded-lg shadow-sm">
-                        <strong>[{{ log.time }}]</strong> {{ log.message }}
+                
+                <div class="mt-8 border-t pt-4">
+                    <h2 class="text-xl font-bold text-gray-800 mb-3">작업 로그</h2>
+                    <div id="logArea" class="log-area bg-gray-50 p-3 rounded-lg min-h-[100px] shadow-inner">
+                        <div v-for="(log, index) in logMessages" :key="index" :class="log.class" class="rounded-lg shadow-sm">
+                            <strong>[{{ log.time }}]</strong> {{ log.message }}
+                        </div>
                     </div>
                 </div>
-            </div>
-        </main>
-    </div>
-</div>
-    
-<script>
-    // URL 파라미터를 분석합니다.
+            </main>
+        </div>
+		`;
+		app.innerHTML = htmlContent;
+	}
+};
+
+
+// URL 파라미터를 분석합니다.
     const urlParams = new URLSearchParams(window.location.search);
     // 현재 URL 경로를 정리합니다.
     const path = window.location.pathname.replace("/", "");
@@ -327,8 +336,8 @@
     // -----------------------------------------------------
 
     window.onload = function() {
-
-        new Vue({
+        injectAppStyles();
+        window.app = new Vue({
             el: '#app',
             data: {
                 // [Vue 데이터]
@@ -885,6 +894,3 @@
             }
         });
     };
-</script>
-</body>
-</html>
