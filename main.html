@@ -3,28 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>게시판 담당자 자동 관리 도구</title>
-    <!-- Tailwind CSS 로드 -->
+    <title>블로그 자동 관리 도구</title>
     <script src="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.js"></script>
-    <!-- Vue.js 2.x 로드 -->
     <script src="https://cdn.jsdelivr.net/npm/vue@2.7.14/dist/vue.js"></script>
     <style>
-         body { font-family: 'Inter', sans-serif; background-color: #f7f9fb; }
-    #appContainer { max-width: 700px; height: 100vh; }
-    /* 로그 영역에 스크롤 적용 */
-    .log-area { max-height: 200px; overflow-y: auto; display: flex; flex-direction: column-reverse; }
-    .log-area div { padding: 4px 8px; margin-bottom: 4px; border-radius: 4px; font-size: 0.8rem; word-break: break-all; }
-    .log-success { background-color: #d1fae5; color: #065f46; }
-    .log-error { background-color: #fee2e2; color: #991b1b; }
-    .log-info { background-color: #e0f2fe; color: #075985; }
-    .tab-button { transition: all 0.2s; border-bottom: 3px solid transparent; }
-    .tab-button.active { border-color: #4f46e5; color: #1e3a8a; font-weight: 600; }
-    .text-input-group { display: flex; flex-direction: column; flex-grow: 1; }
+        body { font-family: 'Inter', sans-serif; background-color: #f7f9fb; }
+        /* 가로 폭 제한 해제 (max-width: 700px 제거) */
+        #appContainer { max-width: none; height: 100vh; } 
+        /* 로그 영역에 스크롤 적용 */
+        .log-area { max-height: 200px; overflow-y: auto; display: flex; flex-direction: column-reverse; }
+        .log-area div { padding: 4px 8px; margin-bottom: 4px; border-radius: 4px; font-size: 0.8rem; word-break: break-all; }
+        .log-success { background-color: #d1fae5; color: #065f46; }
+        .log-error { background-color: #fee2e2; color: #991b1b; }
+        .log-info { background-color: #e0f2fe; color: #075985; }
+        .tab-button { transition: all 0.2s; border-bottom: 3px solid transparent; }
+        .tab-button.active { border-color: #4f46e5; color: #1e3a8a; font-weight: 600; }
+        .text-input-group { display: flex; flex-direction: column; flex-grow: 1; }
     </style>
 </head>
 <body>
 
-<div id="app" class="p-4 md:p-8 mx-auto flex flex-col">
+<div id="app" class="p-4 md:p-8 mx-auto flex flex-col w-full"> 
     <div id="appContainer" class="bg-white rounded-xl shadow-2xl border border-gray-100 flex flex-col h-full overflow-hidden">
         <header class="p-6 pb-0">
             <h1 class="text-3xl font-extrabold text-gray-800 mb-2">블로그 자동 관리 도구(v.{{version}})</h1>
@@ -32,22 +31,20 @@
                 팝업을 띄운 <strong class="text-red-500">메인 창</strong>에서 블로그 확인을 자동화합니다.
             </p>
             
-            <!-- 게시판 타입 선택 UI (최상단 배치) -->
             <div class="mb-5 p-3 bg-indigo-50 rounded-lg border border-indigo-200">
-                <label class="block text-sm font-bold text-indigo-700 mb-2">① 블로그확인 (T + 그룹 ID)</label>
-                <div id="boardTypeRadios" class="type-list">
+                <label class="block text-sm font-bold text-indigo-700 mb-2">① 블로그확인 (T + 그룹 명칭)</label>
+                <div id="boardTypeRadios" class="type-list grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-2">
                     <div v-for="type in dynamicBoardTypes" :key="type" class="flex items-center">
                         <input :id="'type' + type" name="boardType" type="radio" :value="type" 
                                 v-model="currentBoardType"
                                 class="h-4 w-4 text-indigo-600 border-gray-300 focus:ring-indigo-500">
                         <label :for="'type' + type" class="ml-2 block text-sm font-medium text-gray-700 cursor-pointer">
-                            타입 {{ type }} <span class="font-bold text-indigo-600">({{ managerCount[type] || 0 }}명)</span>
+                            <span class="font-bold text-indigo-600">{{ getGroupName(type) }}</span> ({{ managerCount[type] || 0 }}명)
                         </label>
                     </div>
                 </div>
             </div>
 
-            <!-- 탭 네비게이션 -->
             <nav class="flex border-b border-gray-200">
                 <button 
                     @click="currentTab = 'manage'" 
@@ -67,13 +64,12 @@
         </header>
 
         <main class="flex-grow overflow-auto p-6 pt-4">
-            <!-- 2. 담당자 목록 관리 탭 -->
             <div v-if="currentTab === 'manage'">
                 <div class="mb-6 text-input-group">
                     <label for="managerInput" class="block text-sm font-medium text-gray-700 mb-2">
-                        타입 <strong class="text-indigo-600">{{ currentBoardType }}</strong>의 이웃 목록 (<strong class="text-indigo-600">blogId 닉네임</strong> 형식으로 입력)
+                        그룹 <strong class="text-indigo-600">{{ getGroupName(currentBoardType) }}</strong>의 이웃 목록 (<strong class="text-indigo-600">blogId 닉네임</strong> 형식으로 입력)
                     </label>
-                    <textarea id="managerInput" rows="10" 
+                    <textarea id="managerInput" rows="6" 
                         v-model="currentManagersText"
                         @input="saveTextareaContent"
                         class="w-full p-3 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150 flex-grow"
@@ -84,33 +80,31 @@
                 <div id="controls" class="flex flex-wrap gap-3 mb-6">
                     <button @click="loadFromAPI" :disabled="api.isLoading" class="flex-1 min-w-[140px] px-4 py-2 text-white bg-green-600 hover:bg-green-700 font-semibold rounded-lg shadow-md transition duration-200 disabled:bg-green-400 disabled:cursor-wait">
                         <span v-if="api.isLoading">API 로딩 중 ({{ api.currentPage }})...</span>
-                        <span v-else>서버에서 불러오기 (API)</span>
+                        <span v-else>서버 조회</span>
                     </button>
-                    <button v-if="false" @click="loadFromLocalStorage" class="flex-1 min-w-[140px] px-4 py-2 text-white bg-blue-600 hover:bg-blue-700 font-semibold rounded-lg shadow-md transition duration-200">
-                        로컬 저장소에서 불러오기
+                    <button @click="loadFromLocalStorage" class="flex-1 min-w-[140px] px-4 py-2 text-white bg-blue-600 hover:bg-blue-700 font-semibold rounded-lg shadow-md transition duration-200">
+                        목록 불러오기
                     </button>
-                    <button v-if="false" @click="saveToLocalStorage" class="flex-1 min-w-[140px] px-4 py-2 text-white bg-red-600 hover:bg-red-700 font-semibold rounded-lg shadow-md transition duration-200">
-                        로컬 저장소에 저장
+                    <button @click="saveToLocalStorage" class="flex-1 min-w-[140px] px-4 py-2 text-white bg-red-600 hover:bg-red-700 font-semibold rounded-lg shadow-md transition duration-200">
+                        목록 저장
                     </button>
                 </div>
             </div>
 
-            <!-- 3. 자동화 실행 탭 -->
             <div v-else-if="currentTab === 'auto'">
                 
                 <div v-if="automation.isProcessing" class="mb-6 p-4 border border-yellow-500 rounded-lg bg-yellow-50 shadow-md">
-                    <h3 class="text-lg font-bold text-yellow-800 mb-2">자동화 진행 중...</h3>
+                    <h3 class="text-lg font-bold text-yellow-800 mb-2">
+                        자동화 진행 중... <span class="font-normal text-sm text-yellow-700">(진행: {{ formatElapsedTime }})</span>
+                    </h3>
                     
-                    <!-- 총 진척도 표시 -->
                     <p class="text-gray-700 font-semibold mb-1">
-                        총 담당자 처리: {{ automation.processedManagers }} / {{ automation.totalManagers }} 명
+                        총 이웃 처리: {{ automation.processedManagers }} / {{ automation.totalManagers }} 명
                     </p>
                     
-                    <!-- 현재 담당자 개별 진척도 표시 -->
-                    <div v-if="automation.currentItemTotal > 0">
+                    <div v-if="automation.totalManagers > 0">
                         <p class="text-gray-600 text-sm">
-                            **타입 {{ currentBoardType }}** - {{ automation.currentManager.id }}({{ automation.currentManager.nickname }}) 처리 중
-                            (게시물: {{ automation.currentItemProcessed }} / {{ automation.currentItemTotal }} 건)
+                            **그룹 {{ getGroupName(currentBoardType) }}** - {{ automation.currentManager.id }}({{ automation.currentManager.nickname }}) 처리 중
                         </p>
                     </div>
 
@@ -121,7 +115,6 @@
 
                 </div>
 
-                <!-- 옵션 설정 UI -->
                 <div class="mb-6 p-4 border border-indigo-200 rounded-lg bg-indigo-50" v-if="false">
                     <label class="block text-sm font-bold text-indigo-700 mb-3">
                         자동화 옵션 설정
@@ -137,27 +130,30 @@
                         </div>
                     </div>
                     <p class="text-xs text-gray-500 mt-3 p-1">
-                        **공통 게시판 URL:** {{ BOARD_URL }}<br>
+                        **공통 블로그 URL:** {{ BOARD_URL }}<br>
                         **공통 게시물 URL:** {{ POST_URL }}
                     </p>
                 </div>
             
                 <button 
                     @click="startBoardAutomation" 
-                    :disabled="managerCount[currentBoardType] === 0"
-                    class="w-full mt-3 px-4 py-3 text-lg text-white bg-indigo-700 hover:bg-indigo-800 font-bold rounded-lg shadow-xl transition duration-200 transform hover:scale-[1.01] disabled:bg-indigo-400 disabled:cursor-not-allowed"
+                    :disabled="managerCount[currentBoardType] === 0 && !automation.isProcessing"
+                    class="w-full mt-3 px-4 py-3 text-lg text-white font-bold rounded-lg shadow-xl transition duration-200 transform hover:scale-[1.01] 
+                    " :class="{'bg-red-700 hover:bg-red-800': automation.isProcessing, 'bg-indigo-700 hover:bg-indigo-800': !automation.isProcessing}"
                 >
                     <span v-if="!automation.isProcessing">
-                        ▶ 타입 {{ currentBoardType }} 자동확인 시작 (총 {{ managerCount[currentBoardType] || 0 }}명)
+                        {{ automation.processedManagers > 0 ? '▶ 다시시작' : '▶ 시작' }} 
+                        (총 {{ managerCount[currentBoardType] || 0 }}명)
                     </span>
-                    <span v-else>처리 중... (중지하려면 클릭해주세요)</span>
+                    <span v-else>
+                        처리 중... (중지하려면 클릭해주세요)
+                    </span>
                 </button>
-                <p v-if="managerCount[currentBoardType] === 0" class="text-sm text-red-500 mt-2 text-center">
-                    선택된 타입({{ currentBoardType }})에 담당자가 없습니다. '담당자 목록 관리' 탭에서 추가하거나 서버에서 불러오세요.
+                <p v-if="managerCount[currentBoardType] === 0 && !automation.isProcessing" class="text-sm text-red-500 mt-2 text-center">
+                    선택된 {{ getGroupName(currentBoardType) }}에 이웃이 없습니다. 조회버튼을 이용해 다시 조회하세요.
                 </p>
             </div>
             
-            <!-- 로그 영역 -->
             <div class="mt-8 border-t pt-4">
                 <h2 class="text-xl font-bold text-gray-800 mb-3">작업 로그</h2>
                 <div id="logArea" class="log-area bg-gray-50 p-3 rounded-lg min-h-[100px] shadow-inner">
@@ -171,39 +167,60 @@
 </div>
     
 <script>
+    // URL 파라미터를 분석합니다.
     const urlParams = new URLSearchParams(window.location.search);
-const path = window.location.pathname.replace("/", "");
-let id = "abc";
-if(path == "PostList.naver"){
-    id = urlParams.get("blogId");
-} else {
-    id = path;
-}
-window.version = "1.0.1";
+    // 현재 URL 경로를 정리합니다.
+    const path = window.location.pathname.replace("/", "");
+    
+    // =====================================================
+    // [전역 변수 정의 및 주석]
+    // =====================================================
+    let id = "abc"; // 현재 사용자의 ID를 임시로 저장하는 변수
+    if(path == "PostList.naver"){
+        // URL 경로가 특정 게시물 목록 형태일 경우, 'blogId' 파라미터에서 사용자 ID를 추출합니다.
+        id = urlParams.get("blogId");
+    } else {
+        // 그 외의 경우, URL 경로 자체를 사용자 ID로 간주합니다.
+        id = path;
+    }
+    
+    window.version = "1.0.2"; // 애플리케이션의 현재 버전
+    window.elementsToKeep = 5; // 자동화 시 좋아요 버튼 클릭을 시도할 최대 게시물 수 (최신순에서 이 개수만큼 처리)
+    window.MY_ID = id; // 현재 팝업을 띄운 메인 창의 사용자 ID
+    // 이웃의 게시물 목록으로 이동하기 위한 기본 URL. 뒤에 이웃의 blogId가 붙어 최종 URL이 됩니다.
+    window.BOARD_URL = "/PostList.naver?categoryNo=0&listStyle=card&tab=1&trackingCode=blog_buddylist&blogId="; 
+    window.POST_URL = ""; // (현재 버전에서는 사용되지 않음) 개별 게시물로 이동하기 위한 기본 URL
+    // =====================================================
 
-window.elementsToKeep = 5;
-window.MY_ID = id;
-window.BOARD_URL = "/PostList.naver?categoryNo=0&listStyle=card&tab=1&trackingCode=blog_buddylist&blogId=";
-window.POST_URL = "";
-// -----------------------------------------------------
-    // 1. 유틸리티 함수 (제공해주신 소스 기반으로 재정의)
+    // -----------------------------------------------------
+    // 1. 유틸리티 함수
     // -----------------------------------------------------
 
-    /** 최소/최대값 범위의 랜덤 정수를 반환합니다. */
+    /** * [랜덤 정수 생성]
+     * 최소/최대값 범위의 랜덤 정수를 반환합니다. (자동화 딜레이 시간 생성에 사용) 
+     */
     function getRandomInt(min, max) {
         min = Math.ceil(min);
         max = Math.floor(max);
         return Math.floor(Math.random() * (max - min + 1)) + min;
     }
 
-    /** Pointer/Mouse 이벤트를 요소에 디스패치합니다. */
+    /** * [이벤트 디스패치]
+     * Pointer/Mouse 이벤트를 요소에 시퀀스적으로 디스패치합니다. (클릭 시뮬레이션의 핵심)
+     */
     function seqDispatch(el, type, init) {
         // targetWindow의 document에서 사용할 수 있도록 window 대신 targetWindow를 사용합니다.
         try { el.dispatchEvent(new PointerEvent(type, init)); } catch (e) { /* console.error(e.message); */ }
         try { el.dispatchEvent(new MouseEvent(type, init)); } catch (e) { /* console.error(e.message); */ }
     }
 
-    /** 요소가 보이도록 스크롤하고, 마우스 이벤트 시퀀스를 시뮬레이션하여 클릭합니다. */
+    /**
+     * [클릭 시뮬레이션]
+     * 요소가 보이도록 스크롤하고, 마우스 이벤트 시퀀스를 시뮬레이션하여 클릭합니다.
+     * @param {Element} el - 클릭할 대상 요소
+     * @param {Window} targetWindow - 이벤트가 디스패치될 메인 창 Window 객체
+     * @param {number} delay - 호버 이벤트 후 실제 클릭 시퀀스까지의 대기 시간 (ms)
+     */
     function hoverThenClick(el, targetWindow, delay = 200) {
         if (!el) return;
 
@@ -222,7 +239,7 @@ window.POST_URL = "";
             clientY: (rect.top + rect.bottom) / 2,
         };
 
-        // 1) hover 계열 이벤트
+        // 1) hover 계열 이벤트 시뮬레이션
         seqDispatch(el, 'pointerover', base);
         seqDispatch(el, 'mouseover', base);
         seqDispatch(el, 'pointerenter', base);
@@ -231,7 +248,7 @@ window.POST_URL = "";
 
         // 2) 약간 대기(호버시 내부 데이터/레이어 토글 시간 확보)
         setTimeout(() => {
-            // 3) 실제 클릭 시퀀스 (down → up → click)
+            // 3) 실제 클릭 시퀀스 (down → up → click) 시뮬레이션
             seqDispatch(el, 'pointerdown', base);
             seqDispatch(el, 'mousedown', base);
 
@@ -246,8 +263,12 @@ window.POST_URL = "";
     }
 
     /**
-     * 메인 창(targetWindow)에서 좋아요 버튼을 찾아 클릭하는 로직을 실행합니다.
-     * 이 함수는 Vue 컴포넌트의 메서드로 통합되어 Vue의 log 기능과 연동됩니다.
+     * [좋아요 버튼 클릭 로직]
+     * 메인 창(targetWindow)에서 좋아요 버튼을 찾아 시뮬레이션 클릭을 실행합니다.
+     * @param {Window} targetWindow - 메인 창 Window 객체 (좋아요 버튼이 있는 창)
+     * @param {Function} logFunction - Vue 인스턴스의 log 메서드 (로그 기록용)
+     * @param {Object} automation - Vue 인스턴스의 automation 상태 객체 (중지 플래그 확인용)
+     * @returns {number} 처리된 좋아요 버튼 수
      */
     async function fnBtnclick(targetWindow, logFunction, automation) {
 		let self = this;
@@ -256,17 +277,17 @@ window.POST_URL = "";
             return 0; // 처리된 버튼 수 0 반환
         }
         
-        // 메인 창의 document를 기준으로 버튼을 찾습니다.
+        // 메인 창의 document를 기준으로 '좋아요' 버튼 (아직 클릭되지 않은 상태)을 찾습니다.
         let likeButtons = Array.from(
             targetWindow.document.querySelectorAll('#contentslist_block a.u_likeit_button:not(.on)')
         );
         
-
+        window.elementsToKeep = getRandomInt(4, 7); // 4~7 개 랜덤 검색
         if (likeButtons.length === 0) {
             logFunction('클릭할 좋아요 버튼을 찾지 못했습니다.', 'info');
             return 0;
         } else if (likeButtons.length > window.elementsToKeep){
-            // likeButtons.splice(window.elementsToKeep);
+            // elementsToKeep 수 만큼만 처리하기 위해 초과분은 제외 (최신 게시물 위주로 처리)
             let deleteCount = likeButtons.length - window.elementsToKeep;
             likeButtons.splice(0, deleteCount);
         }
@@ -276,28 +297,15 @@ window.POST_URL = "";
         let clickedCount = 0;
 
         for (let i = 0; i < likeButtons.length; i++) {
-            if (!automation.isProcessing) { // Vue의 isProcessing 상태를 참조하여 중지 확인
+            // Vue의 isProcessing 상태나 runFlg를 참조하여 중지 여부를 확인합니다.
+            if (!automation.isProcessing || self.runFlg == false) { 
                 logFunction('자동화 중지 요청으로 인해 버튼 클릭을 중단합니다.', 'info');
                 break;
             }
 
-			if(self.runFlg == false){
-				break;
-			}
-
-
             const btn = likeButtons[i];
             
-            // Vue 컴포넌트의 hoverThenClick 함수가 아닌, 유틸리티 함수를 사용합니다.
-            // 이 컨텍스트에서는 Vue 인스턴스가 아니므로 직접 정의된 hoverThenClick을 사용해야 하지만,
-            // Vue 인스턴스에서 this.hoverThenClick을 호출하는 방식으로 통합합니다.
-            // 여기서는 Vue 내부에서 호출되므로, Vue 인스턴스가 제공하는 hoverThenClick을 사용합니다.
-            // NOTE: Vue 내부에서 호출되므로, 'targetWindow' 인수를 넘겨 Vue 내부 함수를 사용하도록 처리합니다.
-            
             logFunction(`[버튼 클릭] ${i + 1}/${likeButtons.length}번째 버튼 처리 중...`);
-            
-            // 실제 Vue 인스턴스의 메서드를 호출하는 대신, 버튼을 클릭하는 동작만 정의합니다.
-            // Vue 컴포넌트 메서드에서 이 로직을 감싸서 `hoverThenClick`을 호출하게 됩니다.
             
             const rect = btn.getBoundingClientRect();
             const base = {
@@ -314,7 +322,7 @@ window.POST_URL = "";
             // 스크롤 및 클릭 시뮬레이션
             btn.scrollIntoView({ block: 'center', inline: 'center' });
             
-            // 클릭 시퀀스
+            // 클릭 시퀀스 (down → up → click)
             seqDispatch(btn, 'pointerdown', base);
             seqDispatch(btn, 'mousedown', base);
             seqDispatch(btn, 'pointerup', base);
@@ -322,12 +330,34 @@ window.POST_URL = "";
             seqDispatch(btn, 'click', base);
             
             clickedCount++;
-            let t = getRandomInt(1000, 5000);
-            await new Promise(resolve => setTimeout(resolve, t)); // 1~3초 대기
+            let t = getRandomInt(1000, 5000); // 1초 ~ 5초 사이 랜덤 대기
+            await new Promise(resolve => setTimeout(resolve, t)); 
         }
 
-        logFunction(`총 ${clickedCount}개의 좋아요 버튼 클릭 시뮬레이션 완료.`, 'success');
+        logFunction(`총 ${clickedCount}개의 좋아요 완료.`, 'success');
         return clickedCount;
+    }
+
+    /**
+     * [시간 포매팅]
+     * 밀리초 단위의 시간을 "H시간 M분 S초" 형식으로 포맷합니다.
+     * @param {number} ms - 경과 시간 (밀리초)
+     * @returns {string} 포맷된 시간 문자열
+     */
+    function formatTime(ms) {
+        if (ms < 0) return "0초";
+        let seconds = Math.floor(ms / 1000);
+        const hours = Math.floor(seconds / 3600);
+        seconds %= 3600;
+        const minutes = Math.floor(seconds / 60);
+        const remainingSeconds = seconds % 60;
+
+        let parts = [];
+        if (hours > 0) parts.push(`${hours}시간`);
+        if (minutes > 0) parts.push(`${minutes}분`);
+        if (remainingSeconds > 0 || parts.length === 0) parts.push(`${remainingSeconds}초`); // 시간이 0일 때 "0초" 표시
+
+        return parts.join(' ');
     }
 
 
@@ -336,32 +366,36 @@ window.POST_URL = "";
     // -----------------------------------------------------
 
     window.onload = function() {
-		injectAppStyles();
+
         new Vue({
             el: '#app',
             data: {
-                // [API] 내 아이디 (하드코딩)
-                MY_ID: window.MY_ID, 
-                version: window.version,
-                LOCAL_STORAGE_KEY: 'BoardManagersData',
-				runFlg : false,
+                // [Vue 데이터]
+                MY_ID: window.MY_ID, // 현재 사용자 블로그 ID
+                version: window.version, // 애플리케이션 버전
+                LOCAL_STORAGE_KEY: 'MyData_' + window.MY_ID, // 로컬 스토리지에 데이터를 저장할 때 사용할 키
+				runFlg : false, // 자동화 실행/중지 상태를 관리하는 플래그 (토글 역할)
                 
-                // [New] 모든 게시판/게시물이 사용하는 공통 URL
-                BOARD_URL: window.BOARD_URL, //'https://common-site.com/board/list/', // manager.id를 붙이기 위해 / 로 끝남
-                POST_URL: window.POST_URL, //'https://common-site.com/board/view',
+                BOARD_URL: window.BOARD_URL, // 이웃 블로그 기본 URL
+                POST_URL: window.POST_URL, // 개별 게시물 기본 URL (미사용)
                 
-                // [New] 메인 창의 document 객체를 담을 변수
-                targetWindow: null, 
-
+                targetWindow: null, // 팝업을 띄운 메인 창(opener)의 Window 객체
+                
                 // UI 상태
-                currentTab: 'manage',
-                currentBoardType: 'T1', // 기본 그룹: T1
+                currentTab: 'manage', // 현재 활성화된 탭 ('manage' 또는 'auto')
+                currentBoardType: 'T1', // 현재 선택된 블로그 타입 (T1, T2 등)
 
-                // 핵심 데이터 저장소: 키는 'T' + groupId
-                managerData: { 'T1': [] }, 
-                currentManagersText: '', 
-                logMessages: [],
+                // 핵심 데이터 저장소
+                managerData: { 'T1': [] }, // 키: 'T' + groupId, 값: { id, nickname } 객체 배열
+                groupList: [], // {groupId: 1, groupName: "새 그룹"} 형태의 그룹 정보 목록
+                currentManagersText: '', // 현재 선택된 타입의 이웃 목록을 표시하는 textarea 내용
+                logMessages: [], // 작업 로그 메시지 배열
                 
+                // 경과 시간 및 타이머 관련
+                startTime: null, // 자동화 시작 시간 (Date 객체)
+                elapsedTime: 0, // 경과 시간 (밀리초)
+                timerInterval: null, // setInterval 핸들러
+
                 // 공통 자동화 옵션 (현재는 미사용)
                 globalAutomationOptions: {
                     option1: false, 
@@ -370,21 +404,27 @@ window.POST_URL = "";
 
                 // API 로딩 상태
                 api: {
-                    isLoading: false,
-                    currentPage: 1,
-                    sortType: 2, 
+                    isLoading: false, // API 호출 중 여부
+                    currentPage: 1, // 현재 로드 중인 페이지 번호
+                    sortType: 2, // API 호출에 사용되는 정렬 타입
                 },
                 
                 // 자동화 상태 관리
                 automation: {
-                    isProcessing: false,
-                    totalManagers: 0,
-                    processedManagers: 0,
-                    currentManager: { id: '', nickname: '' },
-                    // fnBtnclick 방식에서는 게시물 단위의 진척도는 필요 없습니다.
+                    isProcessing: false, // 자동화 작업 진행 중 여부 (중지 버튼 제어용)
+                    totalManagers: 0, // 현재 타입의 총 이웃 수
+                    processedManagers: 0, // 현재까지 처리 완료된 이웃 수 (다음 시작 위치)
+                    currentManager: { id: '', nickname: '' }, // 현재 처리 중인 이웃 정보
+                    // 다음 두 속성은 현재 좋아요 클릭 로직에서는 게시물 단위 진척도 측정에 사용되지 않음
+                    currentItemProcessed: 0, 
+                    currentItemTotal: 0, 
+                    totalDuration: null, // 최종 완료까지 걸린 총 시간 (밀리초)
                 }
             },
             computed: {
+                /** * [동적 블로그 타입]
+                 * managerData의 키를 기반으로 사용 가능한 블로그 타입 목록(T1, T2...)을 오름차순으로 정렬하여 반환합니다. 
+                 */
                 dynamicBoardTypes() {
                     const types = Object.keys(this.managerData).sort((a, b) => {
                         const numA = parseInt(a.substring(1));
@@ -392,32 +432,50 @@ window.POST_URL = "";
                         return numA - numB;
                     });
                     
+                    // 현재 타입이 목록에 없으면 첫 번째 타입으로 기본값 설정
                     if (!types.includes(this.currentBoardType)) {
                         this.currentBoardType = types[0] || 'T1';
                     }
                     
                     return types;
                 },
+                /** * [타입별 이웃 수]
+                 * 각 블로그 타입별로 등록된 이웃 수를 계산하여 객체 형태로 반환합니다. 
+                 */
                 managerCount() {
                     return Object.keys(this.managerData).reduce((acc, type) => {
                         acc[type] = this.managerData[type] ? this.managerData[type].length : 0;
                         return acc;
                     }, {});
                 },
+                /** * [총 이웃 수]
+                 * 모든 타입의 이웃 수를 합산하여 반환합니다.
+                 */
                 totalManagerCount() {
                     return Object.keys(this.managerData).reduce((sum, type) => sum + this.managerCount[type], 0);
                 },
+                /** * [자동화 진척도]
+                 * 현재 선택된 타입의 전체 이웃 대비 처리된 이웃 비율(%)을 계산합니다.
+                 */
                 automationProgress() {
                     const totalCurrentManagers = this.managerCount[this.currentBoardType] || 0; 
                     if (totalCurrentManagers === 0) return 0;
                     
                     return (this.automation.processedManagers / totalCurrentManagers) * 100;
+                },
+                /** * [경과 시간 포맷]
+                 * 현재 경과 시간(elapsedTime)을 "H시간 M분 S초" 형식으로 변환하여 반환합니다.
+                 */
+                formatElapsedTime() {
+                    return formatTime(this.elapsedTime);
                 }
             },
             watch: {
+                /** currentBoardType 변경 시 textarea 내용을 업데이트합니다. */
                 currentBoardType() {
                     this.updateTextareaDisplay();
                 },
+                /** managerData가 변경될 때마다 textarea 내용을 업데이트합니다. */
                 managerData: {
                     handler() {
                         this.updateTextareaDisplay();
@@ -429,6 +487,19 @@ window.POST_URL = "";
                 // -----------------------------------------------------
                 // [Vue 기본 로직]
                 // -----------------------------------------------------
+                /** * [그룹 명칭 가져오기]
+                 * 블로그 타입(T1, T2 등)에 해당하는 그룹 명칭을 반환합니다. 없으면 기본 타입을 반환합니다.
+                 */
+                getGroupName(type) {
+                    const groupId = parseInt(type.substring(1));
+                    const group = this.groupList.find(g => g.groupId === groupId);
+                    return group ? group.groupName : `타입 ${type}`;
+                },
+                /** * [로그 기록]
+                 * 작업 로그 메시지를 기록하고 UI에 표시합니다. 
+                 * @param {string} message - 로그 내용
+                 * @param {string} type - 로그 타입 ('info', 'success', 'error')
+                 */
                 log(message, type = 'info') {
                     const now = new Date();
                     const timeStr = now.toLocaleTimeString('ko-KR');
@@ -436,10 +507,14 @@ window.POST_URL = "";
                     
                     this.logMessages.unshift({ time: timeStr, message: message, class: className });
                     
+                    // 로그 메시지 개수 제한
                     if (this.logMessages.length > 50) {
                         this.logMessages.pop(); 
                     }
                 },
+                /** * [텍스트 파싱]
+                 * textarea의 텍스트 ('blogId 닉네임' 형식)를 이웃 객체 배열로 변환합니다.
+                 */
                 parseTextToManagers(text) {
                     const managers = [];
                     const lines = text.split('\n')
@@ -456,6 +531,7 @@ window.POST_URL = "";
                         }
                     });
 
+                    // 중복된 ID를 가진 이웃을 제거하고 고유한 목록만 반환
                     const uniqueManagers = [];
                     const ids = new Set();
                     managers.forEach(manager => {
@@ -466,32 +542,48 @@ window.POST_URL = "";
                     });
                     return uniqueManagers;
                 },
+                /** * [매니저 목록을 텍스트로 변환]
+                 * 이웃 객체 배열을 'blogId 닉네임' 형식의 텍스트로 변환합니다.
+                 */
                 managersToText(managers) {
                     if (!managers || managers.length === 0) return '';
                     return managers.map(m => m.id + ' ' + m.nickname).join('\n');
                 },
+                /** * [텍스트 저장]
+                 * textarea의 현재 내용을 파싱하여 현재 선택된 타입의 managerData에 저장합니다.
+                 */
                 saveTextareaContent() {
                     this.$set(this.managerData, this.currentBoardType, this.parseTextToManagers(this.currentManagersText));
                 },
+                /** * [textarea UI 업데이트]
+                 * 현재 선택된 타입의 managerData를 textarea에 표시합니다.
+                 */
                 updateTextareaDisplay() {
                     const managers = this.managerData[this.currentBoardType] || [];
                     this.currentManagersText = this.managersToText(managers);
-                    this.log('게시판 타입 [' + this.currentBoardType + ']의 목록 ' + managers.length + '명을 표시했습니다.', 'info');
+                    this.log('그룹 [' + this.getGroupName(this.currentBoardType) + ']의 목록 ' + managers.length + '명을 표시했습니다.', 'info');
                 },
+                /** * [로컬 저장소 저장]
+                 * 현재의 managerData, groupList, 옵션을 로컬 스토리지에 저장합니다.
+                 */
                 saveToLocalStorage() {
-                    this.saveTextareaContent(); 
+                    this.saveTextareaContent(); // 현재 textarea 내용 반영
                     try {
                         const dataToSave = {
                             managerData: this.managerData,
+                            groupList: this.groupList, // 그룹 리스트 추가
                             globalAutomationOptions: this.globalAutomationOptions 
                         };
                         const jsonString = JSON.stringify(dataToSave);
                         localStorage.setItem(this.LOCAL_STORAGE_KEY, jsonString);
-                        this.log('Local Storage 저장 성공. 총 ' + this.totalManagerCount + '명의 담당자 정보가 저장되었습니다.', 'success');
+                        this.log('Local Storage 저장 성공. 총 ' + this.totalManagerCount + '명의 이웃 정보와 그룹 정보가 저장되었습니다.', 'success');
                     } catch (e) {
                         this.log('Local Storage 저장 중 오류 발생: ' + e.message, 'error');
                     }
                 },
+                /** * [로컬 저장소 불러오기]
+                 * 로컬 스토리지에서 데이터를 불러와 managerData, groupList, 옵션을 복원합니다.
+                 */
                 loadFromLocalStorage() {
                     try {
                         const jsonString = localStorage.getItem(this.LOCAL_STORAGE_KEY);
@@ -503,10 +595,11 @@ window.POST_URL = "";
                         
                         if (loadedData && loadedData.managerData) {
                             this.managerData = loadedData.managerData;
+                            this.groupList = loadedData.groupList || []; // 그룹 리스트 로드
                             this.globalAutomationOptions = loadedData.globalAutomationOptions || this.globalAutomationOptions;
 
                             this.updateTextareaDisplay();
-                            this.log('Local Storage에서 담당자 목록 (' + this.totalManagerCount + '명)을 성공적으로 불러왔습니다.', 'success');
+                            this.log('Local Storage에서 이웃 목록 (' + this.totalManagerCount + '명)을 성공적으로 불러왔습니다.', 'success');
                         } else {
                             this.log('Local Storage 데이터 구조가 유효하지 않아 로드하지 못했습니다.', 'error');
                         }
@@ -515,17 +608,22 @@ window.POST_URL = "";
                     }
                 },
                 
-                // API 연동 로직 (이전 버전과 동일하게 유지)
+                // API 연동 로직
+                /** * [API에서 이웃 목록 불러오기]
+                 * 서버 API를 호출하여 이웃 목록(버디 리스트)과 그룹 목록을 가져옵니다.
+                 */
                 async loadFromAPI() {
                     if (this.api.isLoading) return;
                     
                     this.api.isLoading = true;
-                    this.log('### 서버(API)에서 담당자 목록 불러오기 시작... ###', 'info');
+                    this.log('### 서버(API)에서 이웃 목록 불러오기 시작... ###', 'info');
 
                     this.managerData = {}; // 데이터 초기화
+                    this.groupList = []; // 그룹 리스트 초기화
                     this.api.currentPage = 1;
                     let hasMoreData = true;
                     let totalLoadedCount = 0;
+                    let isGroupListLoaded = false;
 
                     try {
                         while (hasMoreData) {
@@ -537,11 +635,17 @@ window.POST_URL = "";
 
                             this.log(`[API] ${pageNo} 페이지 호출 중... URL: ${url}`, 'info');
 
-                            // 실제 fetch 대신 시뮬레이션을 사용
-                            //const apiResponse = await this.simulateApiCall(pageNo, sortType);
                             const response = await fetch(url);
                             const apiResponse = await response.json(); 
                             
+                            // 1. 그룹 목록 (첫 페이지에서만 로드)
+                            if (!isGroupListLoaded && apiResponse.result && apiResponse.result.buddyGroupList) {
+                                this.groupList = apiResponse.result.buddyGroupList;
+                                this.log(`[API] 총 ${this.groupList.length}개의 그룹 정보를 불러왔습니다.`, 'info');
+                                isGroupListLoaded = true;
+                            }
+                            
+                            // 2. 버디 목록
                             if (!apiResponse.isSuccess || !apiResponse.result || !apiResponse.result.buddyList || apiResponse.result.buddyList.length === 0) {
                                 hasMoreData = false;
                                 this.log(`[API] ${pageNo} 페이지에 더 이상 데이터가 없거나 요청이 성공적이지 않습니다.`, 'info');
@@ -551,15 +655,16 @@ window.POST_URL = "";
                             const buddyList = apiResponse.result.buddyList;
                             totalLoadedCount += buddyList.length;
 
+                            // 불러온 데이터를 그룹 ID별로 분류하여 managerData에 저장
                             buddyList.forEach(buddy => {
-                                const typeKey = `T${buddy.groupId}`; 
+                                const typeKey = `T${buddy.groupId}`; // groupId를 사용하여 T1, T2 등의 키 생성
                                 const manager = { 
                                     id: buddy.blogId, 
                                     nickname: buddy.nickName 
                                 };
                                 
                                 if (!this.managerData[typeKey]) {
-                                    this.$set(this.managerData, typeKey, []);
+                                    this.$set(this.managerData, typeKey, []); // 새 타입일 경우 초기화
                                 }
                                 
                                 // 중복 확인 후 추가
@@ -569,16 +674,17 @@ window.POST_URL = "";
                             });
 
                             this.api.currentPage++;
-                            let t = getRandomInt(500, 900);
+                            let t = getRandomInt(100, 700); // 다음 페이지 호출 전 랜덤 대기
                             await new Promise(r => setTimeout(r, t)); 
                         }
 
-                        this.log(`### 서버에서 총 ${totalLoadedCount}명의 담당자 목록을 ${this.api.currentPage - 1} 페이지에 걸쳐 성공적으로 불러왔습니다. ###`, 'success');
+                        this.log(`### 서버에서 총 ${totalLoadedCount}명의 이웃 목록을 ${this.api.currentPage - 1} 페이지에 걸쳐 성공적으로 불러왔습니다. ###`, 'success');
                         
                         if (!this.managerData[this.currentBoardType]) {
                             this.currentBoardType = this.dynamicBoardTypes[0] || 'T1';
                         }
                         this.updateTextareaDisplay();
+                        this.saveToLocalStorage(); // 성공 시 로컬 스토리지에 저장
 
                     } catch (error) {
                         this.log('서버(API) 호출 중 치명적인 오류 발생: ' + error.message, 'error');
@@ -586,139 +692,165 @@ window.POST_URL = "";
                         this.api.isLoading = false;
                     }
                 },
-                
-                // API 호출 시뮬레이션 함수 (실제 API 연동 시 이 함수를 제거하고 fetch를 사용해야 함)
-                async simulateApiCall(pageNo, sortType) {
-                    await new Promise(r => setTimeout(r, 300));
-                    
-                    const data = { isSuccess: true, result: { buddyList: [] } };
-                    
-                    if (pageNo === 1) {
-                        data.result.buddyList = [
-                            { groupId: 1, blogId: 'buddy_korea', nickName: '김대표' },
-                            { groupId: 2, blogId: 'buddy_japan', nickName: '스즈키' },
-                            { groupId: 1, blogId: 'buddy_usa', nickName: '존스' },
-                        ];
-                    } else if (pageNo === 2) {
-                        data.result.buddyList = [
-                            { groupId: 3, blogId: 'buddy_group3_a', nickName: '삼번장' },
-                            { groupId: 1, blogId: 'buddy_group1_d', nickName: '일번보조' },
-                        ];
-                    } else {
-                        data.result.buddyList = [];
-                    }
-                    
-                    return data;
-                },
 
                 // -----------------------------------------------------
-                // 3. 자동화 핵심 로직 (요청에 따라 단순화 및 URL 수정)
+                // 3. 자동화 핵심 로직 및 타이머
                 // -----------------------------------------------------
+                /** * [타이머 시작]
+                 * 경과 시간 측정을 시작하고, 1초마다 elapsedTime을 업데이트합니다.
+                 */
+                startAutomationTimer() {
+                    if (this.timerInterval) this.stopAutomationTimer(); // 기존 타이머가 있으면 중지
+                    if (!this.startTime) this.startTime = new Date(); // 첫 시작 시간 설정
+
+                    this.timerInterval = setInterval(() => {
+                        this.elapsedTime = new Date() - this.startTime;
+                    }, 1000);
+                },
+                /** * [타이머 중지]
+                 * 경과 시간 측정을 멈춥니다.
+                 */
+                stopAutomationTimer() {
+                    clearInterval(this.timerInterval);
+                    this.timerInterval = null;
+                },
+
+                /** * [자동화 시작/중지 토글]
+                 * 자동화 작업을 시작하거나 진행 중인 작업을 중지합니다.
+                 */
                 async startBoardAutomation() {
                     if (!window.opener || window.opener.closed) {
                         this.log('자동화 작업을 시작할 메인 창(opener)이 열려있지 않거나 닫혀 있습니다.', 'error');
                         return;
                     }
                     this.targetWindow = window.opener;
-					if(this.runFlg == false){
-						this.runFlg = true;
-					} else {
+
+                    // 1. 중지 요청 처리 (자동화 진행 중일 때)
+					if(this.runFlg == true){
 						this.runFlg = false;
-						this.automation.isProcessing = false;
-					}
-					if(this.runFlg == false){
+						this.automation.isProcessing = false; 
+                        this.stopAutomationTimer(); // 타이머 중지
+						this.log('사용자에 의해 자동화 작업이 중지되었습니다. 현재 위치에서 다시시작 할 수 있습니다.', 'info');
 						return;
 					}
-
-                    this.saveTextareaContent();
+                    
+                    // 2. 자동화 시작/다시시작 준비
+                    this.runFlg = true;
+                    this.automation.isProcessing = true; // 자동화 시작 상태 설정
+                    this.startAutomationTimer(); // 타이머 시작
+                    
+                    this.saveTextareaContent(); // 시작 전 현재 textarea 내용 반영 (최신 목록 반영)
                     
                     const currentType = this.currentBoardType;
                     const managers = this.managerData[currentType] || [];
                     const totalManagers = managers.length;
                     
                     if (totalManagers === 0) {
-                        this.log(`타입 ${currentType}에 담당자가 없습니다. 목록을 확인해주세요.`, 'error');
+                        this.log(`타입 ${currentType}에 이웃이 없습니다. 목록을 확인해주세요.`, 'error');
+                        this.automation.isProcessing = false;
+                        this.stopAutomationTimer();
                         return;
                     }
                     
-                    this.automation.isProcessing = true;
                     this.automation.totalManagers = totalManagers;
-                    this.automation.processedManagers = 0;
-                    this.automation.currentManager = { id: '', nickname: '' };
 
-                    this.log(`### 타입 ${currentType} 자동화 (${totalManagers}명) 시작합니다. ###`, 'info');
+                    // 재시작일 경우, 기존 processedManagers (처리 완료 수)를 시작 인덱스로 사용
+                    let startIndex = this.automation.processedManagers;
+                    
+                    // 초기 시작 메시지
+                    if (startIndex === 0) {
+                        this.log(`### 그룹 ${this.getGroupName(currentType)} 자동화 (${totalManagers}명) 시작합니다. ###`, 'info');
+                    } else {
+                        this.log(`### 그룹 ${this.getGroupName(currentType)} 자동화 (${totalManagers}명) 다시시작합니다. (재개: ${startIndex + 1}번째 이웃부터) ###`, 'info');
+                    }
 
-                    for (const manager of managers) {
-                        if (!this.automation.isProcessing) {
-                            this.log('사용자에 의해 자동화 작업이 중지되었습니다.', 'info');
+
+                    for (let i = startIndex; i < managers.length; i++) {
+                        const manager = managers[i];
+
+                        // 각 이웃 처리 전 중지 상태 재확인
+                        if (!this.automation.isProcessing || this.runFlg == false) {
+                            // 중지 플래그가 이미 설정되었으므로, 반복문만 종료하고 타이머 중지는 위에서 처리됨
                             break; 
                         }
 
                         this.automation.currentManager = manager;
-                            
+                        
                         // 페이지 로딩 대기
-                        let loadt = getRandomInt(2000, 7000);
+                        let loadt = getRandomInt(2000, 7000); // 2초 ~ 7초 사이 랜덤 대기
                         await new Promise(r => setTimeout(r, loadt));
 
-                        // 게시판 URL을 사용하여 담당자 게시판으로 이동 및 클릭 시뮬레이션 실행
+                        // 이웃 블로그로 이동 및 클릭 시뮬레이션 실행
                         await this.processManagerBoard(currentType, manager); 
 
                         this.automation.processedManagers++;
-                        this.log(`[타입 ${currentType}] ${manager.nickname} (${manager.id}) 담당자 처리 완료!`, 'success');
+                        this.log(`[그룹 ${this.getGroupName(currentType)}] ${manager.nickname} (${manager.id}) 처리 완료! (${this.automation.processedManagers}/${totalManagers})`, 'success');
                     }
 
-                    this.automation.isProcessing = false;
-                    if (!this.logMessages[0].message.includes("중지되었습니다")) {
-                        this.log('### 자동화 확인 처리 완료! ###', 'success');
+                    // 3. 완료/최종 중지 처리
+                    if (!this.automation.isProcessing) {
+                        // 중지 버튼을 눌러 루프가 종료된 경우 (타이머는 이미 중지됨)
+                        this.log('자동화 작업이 중지 지점에서 멈췄습니다.', 'info');
+                    } else {
+                        // 모든 작업이 완료된 경우
+                        this.stopAutomationTimer(); // 타이머 중지
+                        this.automation.totalDuration = this.elapsedTime; // 총 소요 시간 기록
+                        this.automation.isProcessing = false;
+                        this.runFlg = false;
+                        this.log(`### 자동화 확인 처리 완료! (총 소요: ${formatTime(this.automation.totalDuration)}) ###`, 'success');
+                        this.automation.processedManagers = 0; // 완료 후 초기화 (다음 시작 시 0부터)
+                        this.automation.totalDuration = null; // 완료 후 소요 시간 초기화
                     }
                 },
 
                 /**
-                 * [List] 담당자 ID를 붙인 URL로 이동하고 fnBtnclick 로직을 실행합니다.
-                 * processSinglePost 로직은 제거되었습니다.
+                 * [이웃 블로그 처리]
+                 * 이웃 ID를 붙인 URL로 메인 창을 이동시키고, fnBtnclick 로직을 실행합니다.
+                 * @param {string} type - 블로그 타입
+                 * @param {Object} manager - 이웃 정보 { id, nickname }
                  */
                 async processManagerBoard(type, manager) {
 					if(this.runFlg == false){
 						return;
 					}
-                    this.log(`[${manager.nickname} (${manager.id})] 이동 중...`);
+                    this.log(`[${manager.nickname} (${manager.id})] 블로그로 이동 중...`);
                     
-                    // [변경 요청 반영] BOARD_URL + manager.id 로 이동
+                    // BOARD_URL + manager.id 로 메인 창의 URL을 변경하여 페이지 이동
                     const finalUrl = this.BOARD_URL + manager.id; 
                     this.targetWindow.location.href = finalUrl;
 
                     // 페이지 로딩 대기
-                    let loadt = getRandomInt(2000, 3000);
+                    let loadt = getRandomInt(2000, 3000); // 2초 ~ 3초 사이 랜덤 대기
                     await new Promise(r => setTimeout(r, loadt)); 
 
-                    // fnBtnclick 실행 로직
-                    this.log(`[${manager.id}] 게시판 로딩 완료. 좋아요 버튼 클릭 로직 시작.`, 'info');
+                    // fnBtnclick 실행 로직 (좋아요 버튼 클릭 시뮬레이션)
+                    this.log(`[${manager.id}] 로딩 완료. 좋아요 버튼 클릭 로직 시작.`, 'info');
                     
-                    // fnBtnclick 유틸리티 함수를 메인 창의 컨텍스트에서 실행
-                    await fnBtnclick(this.targetWindow, this.log.bind(this), this.automation);
+                    // fnBtnclick 유틸리티 함수를 호출하여 메인 창에서 작업 수행
+                    await fnBtnclick.call(this, this.targetWindow, this.log.bind(this), this.automation);
                     
-                    // fnBtnclick이 완료되면 다음 담당자로 넘어갑니다.
-                    let t = getRandomInt(3000, 13000);
-                    await new Promise(r => setTimeout(r, t)); // 다음 담당자 처리 전 잠깐 대기
+                    // 다음 이웃 처리 전 잠깐 대기
+                    let t = getRandomInt(2000, 13000); // 2초 ~ 13초 사이 랜덤 대기
+                    await new Promise(r => setTimeout(r, t)); 
                 },
-
-                // 이전 processSinglePost 함수는 제거되었습니다.
             },
             mounted() {
+                // Vue 인스턴스가 마운트된 후 초기화 작업 수행
                 if (window.opener) {
-                    this.targetWindow = window.opener;
+                    this.targetWindow = window.opener; // 메인 창 객체 저장
                 }
                 
+                // T1 타입이 정의되지 않았을 경우 초기화
                 if (!this.managerData['T1']) {
                     this.$set(this.managerData, 'T1', []);
                 }
 
-                this.loadFromLocalStorage();
-                this.log('게시판 담당자 관리 시스템이 로드되었습니다. 작업을 시작해 주세요.', 'info');
-                this.updateTextareaDisplay();
+                this.loadFromLocalStorage(); // 로컬 저장소에서 데이터 로드 시도
+                this.log('블로그 자동 관리 시스템이 로드되었습니다. 작업을 시작해 주세요.', 'info');
+                this.updateTextareaDisplay(); // 현재 타입의 목록을 textarea에 표시
             }
         });
-    };      
+    };
 </script>
 </body>
 </html>
