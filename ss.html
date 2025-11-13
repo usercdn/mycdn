@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>GitHub → jsDelivr 변환기 + 캐시 초기화</title>
+<style>
+	body { font-family: 'Inter', sans-serif; background: #f9fafb; padding: 40px; max-width: 700px; margin: auto; }
+	h2 { color: #111827; }
+	textarea, button { width: 100%; padding: 10px; font-size: 15px; margin-top: 10px; border-radius: 6px; border: 1px solid #d1d5db; }
+	button { background: #2563eb; color: white; border: none; cursor: pointer; font-weight: bold; }
+	button:hover { background: #1d4ed8; }
+	.result { margin-top: 20px; background: #f3f4f6; border: 1px solid #e5e7eb; padding: 12px; border-radius: 6px; word-break: break-all; }
+	a { color: #2563eb; text-decoration: none; }
+	a:hover { text-decoration: underline; }
+</style>
+</head>
+<body>
+
+	<h2>GitHub → jsDelivr CDN 변환기</h2>
+	<p>GitHub 파일 주소를 입력하면 CDN, raw 주소, 캐시 초기화 주소를 자동으로 생성합니다.</p>
+	<textarea id="input" rows="3" placeholder="예: https://github.com/abcd/mycdn/blob/main/cccc/dddd.js"></textarea>
+	<button onclick="convertUrl()">변환하기</button>
+
+	<div id="output" class="result"></div>
+
+<script>
+function convertUrl() {
+	const githubUrl = document.getElementById("input").value.trim();
+	const output = document.getElementById("output");
+
+	if (!githubUrl) {
+		output.innerHTML = "❌ GitHub 파일 URL을 입력하세요.";
+		return;
+	}
+
+	// jsDelivr 변환 규칙
+	const cdnUrl = githubUrl
+		.replace("https://github.com/", "https://cdn.jsdelivr.net/gh/")
+		.replace("/blob/", "@")
+		.replace("/tree/", "@");
+
+	// purge 주소
+	const purgeUrl = cdnUrl.replace("https://cdn.jsdelivr.net/", "https://purge.jsdelivr.net/");
+
+	// raw.githubusercontent 변환 규칙
+	const rawUrl = githubUrl
+		.replace("https://github.com/", "https://raw.githubusercontent.com/")
+		.replace("/blob/", "/")
+		.replace("/tree/", "/");
+
+	output.innerHTML = `
+	✅ 변환 완료:<br><br>
+	<strong>jsDelivr CDN 주소:</strong><br>
+	<a href="${cdnUrl}" target="_blank">${cdnUrl}</a><br><br>
+
+	<strong>Raw GitHub 주소:</strong><br>
+	<a href="${rawUrl}" target="_blank">${rawUrl}</a><br><br>
+
+	<strong>캐시 초기화 주소:</strong><br>
+	<a href="${purgeUrl}" target="_blank">${purgeUrl}</a>
+	`;
+}
+</script>
+
+</body>
+</html>
